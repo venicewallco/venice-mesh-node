@@ -1,0 +1,36 @@
+# Venice Mesh - QoS & VoIP Rules 
+ 
+ # Create QoS chains 
+ iptables -t mangle -N QOS_VOIP 2>/dev/null 
+ iptables -t mangle -N QOS_VIDEO 2>/dev/null 
+ iptables -t mangle -N QOS_NORMAL 2>/dev/null 
+ 
+ # VoIP (SIP/RTP) - Highest Priority 
+ iptables -t mangle -A PREROUTING -p udp --dport 5060 -j QOS_VOIP 
+ iptables -t mangle -A PREROUTING -p udp --dport 10000:20000 -j QOS_VOIP 
+ iptables -t mangle -A QOS_VOIP -j MARK --set-mark 1 
+ iptables -t mangle -A QOS_VOIP -j RETURN 
+ 
+ # Video Conferencing (Zoom/Meet/Teams) 
+ iptables -t mangle -A PREROUTING -p udp --dport 3478:3481 -j QOS_VIDEO 
+ iptables -t mangle -A PREROUTING -p udp --dport 8801:8810 -j QOS_VIDEO 
+ iptables -t mangle -A QOS_VIDEO -j MARK --set-mark 2 
+ iptables -t mangle -A QOS_VIDEO -j RETURN 
+ 
+ # Web Browsing - Normal Priority 
+ iptables -t mangle -A PREROUTING -p tcp --dport 80 -j QOS_NORMAL 
+ iptables -t mangle -A PREROUTING -p tcp --dport 443 -j QOS_NORMAL 
+ iptables -t mangle -A QOS_NORMAL -j MARK --set-mark 3 
+ iptables -t mangle -A QOS_NORMAL -j RETURN 
+ 
+ # Apply QoS using tc 
+ tc qdisc add dev br-lan root handle 1: htb default 3 
+ tc class add dev br-lan parent 1: classid 1:1 htb rate 100mbit 
+ tc class add dev br-lan parent 1:1 classid 1:10 htb rate 10mbit ceil 20mbit   # VoIP 
+ tc class add dev br-lan parent 1:1 classid 1:20 htb rate 20mbit ceil 50mbit   # Video 
+ tc class add dev br-lan parent 1:1 classid 1:30 htb rate 50mbit ceil 100mbit  # Normal 
+ 
+ # Match marks to classes 
+ tc filter add dev br-lan parent 1:0 protocol all handle 1 fw flowid 1:10 
+ tc filter add dev br-lan parent 1:0 protocol all handle 2 fw flowid 1:20 
+ tc filter add dev br-lan parent 1:0 protocol all handle 3 fw flowid 1:30
