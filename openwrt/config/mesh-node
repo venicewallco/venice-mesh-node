@@ -1,0 +1,32 @@
+config node 'settings' 
+    option enabled '1' 
+    option node_id "$(uci get system.@system[0].hostname)" 
+    option api_url 'https://api.venicemesh.com' 
+    option api_key '' 
+    option heartbeat_interval '60' 
+    option offline_queue '1' 
+    option max_queue_size '10000' 
+ 
+ config mesh 'batman' 
+    option enabled '1' 
+    option interface 'bat0' 
+    option routing_algo 'BATMAN_IV' 
+ 
+ config mesh 'wifi' 
+    option ssid 'Venice Beach Free WiFi' 
+    option encryption 'none' 
+    option mesh_id 'VeniceMesh-Backhaul' 
+    option fast_roaming '1' 
+    option wmm '1' 
+ 
+ config qos 'bandwidth' 
+    option enabled '1' 
+    option total_upload '100' 
+    option total_download '200' 
+    option per_client_limit '5' 
+    option voip_priority 'highest' 
+ 
+ config logging 'logs' 
+    option level 'info' 
+    option remote_logging '1' 
+    option log_server ''
